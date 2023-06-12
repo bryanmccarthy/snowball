@@ -1,6 +1,8 @@
 const canvas = document.getElementById("game");
-const width = canvas.width;
-const height = canvas.height;
+const width = window.innerWidth;
+const height = window.innerHeight;
+canvas.width = width;
+canvas.height = height;
 const radius = 50;
 const context = canvas.getContext("2d");
 
@@ -17,6 +19,9 @@ function step(timestamp) {
   }
   const deltaTime = (timestamp - start) * 0.001;
   start = timestamp;
+
+  if(x + radius >= width || x - radius <= 0) dx *= -1;
+  if(y + radius >= height || y - radius <= 0) dy *= -1;
 
   x += dx * deltaTime;
   y += dy * deltaTime;
