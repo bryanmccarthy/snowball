@@ -29,10 +29,9 @@ function drawCircle(context, center, radius, color) {
   const canvas = document.getElementById("game");
   const context = canvas.getContext("2d");
   const radius = 50;
-  let speed = 800;
+  let speed = 600;
   let start;
   let pos = new V2(radius + 10, radius + 10);
-  let vel = new V2(0, 0);
 
   const dirMap = {
     'KeyW': new V2(0, -speed),
@@ -40,6 +39,8 @@ function drawCircle(context, center, radius, color) {
     'KeyA': new V2(-speed, 0),
     'KeyD': new V2(speed, 0)
   };
+
+  const pressedKeys = new Set(); 
 
   function step(timestamp) {
     if(start === undefined) {
@@ -53,6 +54,13 @@ function drawCircle(context, center, radius, color) {
     canvas.width = width;
     canvas.height = height;
 
+    let vel = new V2(0, 0);
+    for (let key of pressedKeys) {
+      if (key in dirMap) {
+        vel = vel.add(dirMap[key])
+      }
+    }
+
     pos = pos.add(vel.scale(deltaTime));
 
     context.clearRect(0, 0, width, height);
@@ -64,15 +72,11 @@ function drawCircle(context, center, radius, color) {
   window.requestAnimationFrame(step);
 
   document.addEventListener("keydown", event => {
-    if (event.code in dirMap) {
-      vel = vel.add(dirMap[event.code]);
-    }
+    pressedKeys.add(event.code);
   })
 
   document.addEventListener("keyup", event => {
-    if (event.code in dirMap) {
-      vel = vel.sub(dirMap[event.code]);
-    }
+    pressedKeys.delete(event.code);
   })
 })();
 
