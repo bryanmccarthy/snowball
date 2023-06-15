@@ -15,6 +15,10 @@ class V2 {
   scale(s) {
     return new V2(this.x * s, this.y * s);
   }
+
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
 }
 
 const speed = 800;
@@ -28,17 +32,32 @@ const dirMap = {
 };
 
 class TutPopup {
-  constructor() {
+  constructor(text) {
     this.alpha = 0.0;
     this.dalpha = 0.0;
+    this.text = text;
   }
 
   update(dt) {
-    
+    this.alpha += this.dalpha * dt; 
+
+    if (this.dalpha < 0.0 && this.alpha <= 0.0) {
+      this.dalpha = 0.0;
+      this.alpha = 0.0;
+    } else if (this.dalpha > 0.0 && this.alpha >= 1.0) {
+      this.dalpha = 0.0;
+      this.alpha = 1.0;
+    }
   }
 
   render(context) {
-    
+    const width = context.canvas.width;
+    const height = context.canvas.height;
+
+    context.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+    context.font = "30px Arial";
+    context.textAlign = "center";
+    context.fillText(this.text, width / 2, height / 2);
   }
 
   fadeIn() {
@@ -56,7 +75,9 @@ class Game {
   constructor(pos) {
     this.pos = new V2(radius + 10, radius + 10);
     this.pressedKeys = new Set(); 
-    this.popup = new TutPopup();
+    this.popup = new TutPopup("WASD to move");
+    this.popup.fadeIn();
+    this.first_move = false;
   }
 
   update(dt) {
@@ -66,6 +87,11 @@ class Game {
       if (key in dirMap) {
         vel = vel.add(dirMap[key].scale(speed))
       }
+    }
+
+    if (!this.first_move && vel.length() > 0.0) {
+      this.first_move = true;
+      this.popup.fadeOut();
     }
 
     this.pos = this.pos.add(vel.scale(dt));
@@ -81,10 +107,6 @@ class Game {
     drawCircle(context, this.pos, radius, "blue");
 
     this.popup.render(context);
-
-    context.fillStyle = "white";
-    context.font = "100px Arial";
-    context.fillText("WASD to move", 100, 100);
   }
 
   keyDown(event) {
