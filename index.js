@@ -27,7 +27,7 @@ class V2 {
 }
 
 const PLAYER_SPEED = 1000;
-const radius = 45;
+const PLAYER_RADIUS = 45;
 const BULLET_SPEED = 2000;
 const BULLET_RADIUS = 20;
 const BULLET_LIFETIME = 3.0;
@@ -74,7 +74,7 @@ class TutPopup {
     const height = context.canvas.height;
 
     context.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
-    context.font = "30px Arial";
+    context.font = "24px Arial";
     context.textAlign = "center";
     context.fillText(this.text, width / 2, height / 2);
   }
@@ -153,7 +153,7 @@ class Bullet {
 
 class Game {
   constructor() {
-    this.playerPos = new V2(radius + 10, radius + 10);
+    this.playerPos = new V2(PLAYER_RADIUS + 10, PLAYER_RADIUS + 10);
     this.mousePos = new V2(0, 0);
     this.pressedKeys = new Set(); 
     this.tutorial = new Tutorial();
@@ -191,7 +191,7 @@ class Game {
     const height = context.canvas.height;
     
     context.clearRect(0, 0, width, height);
-    drawCircle(context, this.playerPos, radius, "red");
+    drawCircle(context, this.playerPos, PLAYER_RADIUS, "red");
 
     this.tutorial.render(context);
 
