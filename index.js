@@ -24,6 +24,14 @@ class V2 {
     const n = this.length();
     return new V2(this.x / n, this.y / n);
   }
+
+  dist(v) {
+    return this.sub(v).length();
+  }
+}
+
+function polarV2(mag, dir) {
+  return new V2(Math.cos(dir) * mag, Math.sin(dir) * mag);
 }
 
 const PLAYER_COLOR = "#cf5d55";
@@ -34,6 +42,11 @@ const BULLET_SPEED = 2000;
 const BULLET_RADIUS = 20;
 const BULLET_LIFETIME = 3.0;
 const POPUP_SPEED = 1.5;
+const ENEMY_COLOR = "#4d689e";
+const ENEMY_SPEED = PLAYER_SPEED / 3;
+const ENEMY_RADIUS = 50;
+const ENEMY_SPAWN_DISTANCE = 1500;
+const ENEMY_SPAWN_COOLDOWN = 1.0;
 
 const dirMap = {
   'KeyW': new V2(0, -1.0),
@@ -136,6 +149,26 @@ class Tutorial {
   }
 }
 
+class Enemy {
+  constructor(pos) {
+    this.pos = pos;
+    this.dead = false;
+  }
+
+  update(dt, followPos) {
+    let vel = followPos
+      .sub(this.pos)
+      .normalize()
+      .scale(ENEMY_SPEED * dt);
+
+    this.pos = this.pos.add(vel);
+  }
+
+  render(context) {
+    drawCircle(context, this.pos, ENEMY_RADIUS, ENEMY_COLOR);
+  }
+}
+
 class Bullet {
   constructor(pos, vel) {
     this.pos = pos;
@@ -161,6 +194,8 @@ class Game {
     this.tutorial = new Tutorial();
     this.playerMoved = false;
     this.bullets = [];
+    this.enemies = [];
+    this.enemySpawnCooldown = ENEMY_SPAWN_COOLDOWN;
   }
 
   update(dt) {
@@ -182,10 +217,31 @@ class Game {
     this.tutorial.update(dt);
 
     for (let bullet of this.bullets) {
-      bullet.update(dt);
+      for (let enemy of this.enemies) {
+        if (enemy.pos.dist(bullet.pos) <= BULLET_RADIUS + ENEMY_RADIUS) {
+          enemy.dead = true;
+          bullet.lifetime = 0.0;
+        }
+      }
     }
 
-    this.bullets = this.bullets.filter(bullet => bullet.lifetime > 0.0)
+    for (let bullet of this.bullets) {
+      bullet.update(dt);
+    }
+    this.bullets = this.bullets.filter(bullet => bullet.lifetime > 0.0);
+
+    for (let enemy of this.enemies) {
+      enemy.update(dt, this.playerPos);
+    }
+    this.enemies = this.enemies.filter(enemy => !enemy.dead);
+
+    if (this.tutorial.state == TutorialState.Finished) {
+      this.enemySpawnCooldown -= dt;
+      if (this.enemySpawnCooldown <= 0.0) {
+        this.spawnEnemy();
+        this.enemySpawnCooldown = ENEMY_SPAWN_COOLDOWN;
+      }
+    }
   }
 
   render(context) {
@@ -195,11 +251,21 @@ class Game {
     context.clearRect(0, 0, width, height);
     drawCircle(context, this.playerPos, PLAYER_RADIUS, PLAYER_COLOR);
 
-    this.tutorial.render(context);
 
     for (let bullet of this.bullets) {
       bullet.render(context);
-    }    
+    }
+
+    for (let enemy of this.enemies) {
+      enemy.render(context);
+    }
+
+    this.tutorial.render(context);
+  }
+
+  spawnEnemy() {
+    let dir = Math.random() * 2 * Math.PI;
+    this.enemies.push(new Enemy(this.playerPos.add(polarV2(ENEMY_SPAWN_DISTANCE, dir))));
   }
 
   keyDown(event) {
