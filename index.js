@@ -30,6 +30,7 @@ const PLAYER_SPEED = 800;
 const radius = 50;
 const BULLET_SPEED = 2000;
 const BULLET_RADIUS = 25;
+const BULLET_LIFETIME = 5.0;
 
 const dirMap = {
   'KeyW': new V2(0, -1.0),
@@ -80,10 +81,12 @@ class Bullet {
   constructor(pos, vel) {
     this.pos = pos;
     this.vel = vel;
+    this.lifetime = BULLET_LIFETIME;
   }
 
   update(dt) {
     this.pos = this.pos.add(this.vel.scale(dt));
+    this.lifetime -= dt;
   }
 
   render(context) {      
@@ -99,7 +102,7 @@ class Game {
     this.popup = new TutPopup("WASD to move");
     this.popup.fadeIn();
     this.playerMoved = false;
-    this.bullets = new Set();
+    this.bullets = [];
   }
 
   update(dt) {
@@ -123,6 +126,8 @@ class Game {
     for (let bullet of this.bullets) {
       bullet.update(dt);
     }
+
+    this.bullets = this.bullets.filter(bullet => bullet.lifetime > 0.0)
   }
 
   render(context) {
@@ -151,13 +156,13 @@ class Game {
   }
 
   mouseDown(event) {
-    const mousePos = new V2(event.screenX, event.screenY);
+    const mousePos = new V2(event.offsetX, event.offsetY);
     const bulletVel = mousePos
           .sub(this.playerPos)
           .normalize()
           .scale(BULLET_SPEED)
 
-    this.bullets.add(new Bullet(this.playerPos, bulletVel));
+    this.bullets.push(new Bullet(this.playerPos, bulletVel));
   }
 }
 
