@@ -26,8 +26,10 @@ class V2 {
   }
 }
 
+const PLAYER_COLOR = "#cf5d55";
 const PLAYER_SPEED = 1000;
 const PLAYER_RADIUS = 45;
+const BULLET_COLOR = "#cf5d55";
 const BULLET_SPEED = 2000;
 const BULLET_RADIUS = 20;
 const BULLET_LIFETIME = 3.0;
@@ -147,7 +149,7 @@ class Bullet {
   }
 
   render(context) {      
-    drawCircle(context, this.pos, BULLET_RADIUS, "red");
+    drawCircle(context, this.pos, BULLET_RADIUS, BULLET_COLOR);
   }
 }
 
@@ -191,7 +193,7 @@ class Game {
     const height = context.canvas.height;
     
     context.clearRect(0, 0, width, height);
-    drawCircle(context, this.playerPos, PLAYER_RADIUS, "red");
+    drawCircle(context, this.playerPos, PLAYER_RADIUS, PLAYER_COLOR);
 
     this.tutorial.render(context);
 
