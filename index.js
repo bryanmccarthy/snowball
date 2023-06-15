@@ -26,11 +26,12 @@ class V2 {
   }
 }
 
-const PLAYER_SPEED = 800;
-const radius = 50;
+const PLAYER_SPEED = 1000;
+const radius = 45;
 const BULLET_SPEED = 2000;
-const BULLET_RADIUS = 25;
-const BULLET_LIFETIME = 5.0;
+const BULLET_RADIUS = 20;
+const BULLET_LIFETIME = 3.0;
+const POPUP_SPEED = 1.5;
 
 const dirMap = {
   'KeyW': new V2(0, -1.0),
@@ -44,6 +45,8 @@ class TutPopup {
     this.alpha = 0.0;
     this.dalpha = 0.0;
     this.text = text;
+    this.onFadedOut = undefined;
+    this.onFadedIn = undefined;
   }
 
   update(dt) {
@@ -52,9 +55,17 @@ class TutPopup {
     if (this.dalpha < 0.0 && this.alpha <= 0.0) {
       this.dalpha = 0.0;
       this.alpha = 0.0;
+
+      if (this.onFadedOut !== undefined) {
+        this.onFadedOut();
+      }     
     } else if (this.dalpha > 0.0 && this.alpha >= 1.0) {
       this.dalpha = 0.0;
       this.alpha = 1.0;
+
+      if (this.onFadedIn !== undefined) {
+        this.onFadedIn();
+      }
     }
   }
 
@@ -69,11 +80,57 @@ class TutPopup {
   }
 
   fadeIn() {
-    this.dalpha = 1.0;
+    this.dalpha = POPUP_SPEED;
   }
 
   fadeOut() {
-    this.dalpha = -1.0;
+    this.dalpha = -POPUP_SPEED;
+  }
+}
+
+const TutorialState = Object.freeze({
+  "LearningMovement": 0,
+  "LearningShooting": 1,
+  "Finished": 2
+});
+
+const TutorialMessages = Object.freeze([
+  "WASD to move",
+  "Left Mouse Click to shoot",
+  ""
+]);
+
+class Tutorial {
+  constructor() {
+    this.state = 0;
+    this.popup = new TutPopup("WASD to move");
+    this.popup.fadeIn();
+    this.popup.onFadedOut = () => {
+      this.popup.text = TutorialMessages[this.state];
+      this.popup.fadeIn();
+    };
+  }
+
+  update(dt) {
+    this.popup.update(dt);
+  }
+
+  render(context) {
+    this.popup.render(context);
+  }
+
+  playerMoved() {
+    if (this.state == TutorialState.LearningMovement) {
+      this.popup.fadeOut();
+      this.state += 1;
+    }
+  }
+  
+  playerShot() {
+    if (this.state == TutorialState.LearningShooting) {
+      this.popup.fadeOut();
+      this.state += 1;
+    }
   }
 }
 
@@ -99,29 +156,28 @@ class Game {
     this.playerPos = new V2(radius + 10, radius + 10);
     this.mousePos = new V2(0, 0);
     this.pressedKeys = new Set(); 
-    this.popup = new TutPopup("WASD to move");
-    this.popup.fadeIn();
+    this.tutorial = new Tutorial();
     this.playerMoved = false;
     this.bullets = [];
   }
 
   update(dt) {
     let vel = new V2(0, 0);
+    let moved = false;
 
     for (let key of this.pressedKeys) {
       if (key in dirMap) {
         vel = vel.add(dirMap[key].scale(PLAYER_SPEED))
+        moved = true;
       }
     }
 
-    if (!this.playerMoved && vel.length() > 0.0) {
-      this.playerMoved = true;
-      this.popup.fadeOut();
+    if (moved) {
+      this.tutorial.playerMoved();
     }
 
     this.playerPos = this.playerPos.add(vel.scale(dt));
-
-    this.popup.update(dt);
+    this.tutorial.update(dt);
 
     for (let bullet of this.bullets) {
       bullet.update(dt);
@@ -137,7 +193,7 @@ class Game {
     context.clearRect(0, 0, width, height);
     drawCircle(context, this.playerPos, radius, "red");
 
-    this.popup.render(context);
+    this.tutorial.render(context);
 
     for (let bullet of this.bullets) {
       bullet.render(context);
@@ -156,6 +212,7 @@ class Game {
   }
 
   mouseDown(event) {
+    this.tutorial.playerShot();
     const mousePos = new V2(event.offsetX, event.offsetY);
     const bulletVel = mousePos
           .sub(this.playerPos)
